@@ -6,8 +6,8 @@ import type { User } from '../store/authSlice';
 
 // 1. Create a new Axios instance with a base URL and cookie support
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
-  withCredentials: true, // This is crucial for sending the refreshToken cookie
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true,
 });
 
 // 2. Request Interceptor: This runs BEFORE each request is sent.
