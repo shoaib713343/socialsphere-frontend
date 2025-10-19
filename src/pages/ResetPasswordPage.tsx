@@ -1,7 +1,7 @@
 // src/pages/ResetPasswordPage.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../api/axios'; // Use the smart instance
+import api from '../api/axios';
 
 const ResetPasswordPage = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -15,16 +15,11 @@ const ResetPasswordPage = () => {
     e.preventDefault();
     setMessage('');
     setError('');
-    if (!token) {
-      setError('Invalid or missing token.');
-      return;
-    }
+    if (!token) { setError('Invalid or missing token.'); return; }
     try {
       await api.post(`/auth/reset-password/${token}`, { newPassword, passwordConfirm });
       setMessage('Password has been reset successfully! Redirecting to login...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      setTimeout(() => { navigate('/login'); }, 3000);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to reset password.');
     }
@@ -43,9 +38,7 @@ const ResetPasswordPage = () => {
           </div>
           {message && (<div className="p-3 text-sm text-green-700 bg-green-100 rounded-md">{message}</div>)}
           {error && (<div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">{error}</div>)}
-          <div>
-            <button type="submit" className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Reset Password</button>
-          </div>
+          <div><button type="submit" className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">Reset Password</button></div>
         </form>
       </div>
     </div>

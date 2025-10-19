@@ -1,20 +1,16 @@
 // src/components/CreatePostModal.tsx
 import React, { useState } from 'react';
-import axios from 'axios';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../store';
+import api from '../api/axios';
 
 interface CreatePostModalProps {
   onClose: () => void;
-  onPostCreated: () => void; // Function to refetch posts
+  onPostCreated: () => void;
 }
 
 const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onPostCreated }) => {
   const [content, setContent] = useState('');
   const [media, setMedia] = useState<File | null>(null);
   const [error, setError] = useState('');
-
-  const { token } = useSelector((state: RootState) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,15 +23,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onPostCreate
     }
 
     try {
-      await axios.post('http://localhost:8000/api/v1/posts', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
-        },
+      await api.post('/posts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      onPostCreated(); // Tell the homepage to refetch posts
-      onClose(); // Close the modal
+      onPostCreated();
+      onClose();
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to create post.');
     }
@@ -62,24 +54,12 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ onClose, onPostCreate
           />
           {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-            >
-              Post
-            </button>
+            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Post</button>
           </div>
         </form>
       </div>
     </div>
   );
 };
-
 export default CreatePostModal;

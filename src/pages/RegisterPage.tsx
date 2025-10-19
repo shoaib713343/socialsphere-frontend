@@ -1,7 +1,7 @@
 // src/pages/RegisterPage.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../api/axios'; // Use the smart instance
+import api from '../api/axios';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -17,7 +17,6 @@ const RegisterPage = () => {
       await api.post('/auth/register', { username, email, password });
       navigate('/login');
     } catch (err: any) {
-      console.error('Registration failed:', err);
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
   };
@@ -30,20 +29,12 @@ const RegisterPage = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input name="username" type="text" required className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none rounded-t-md" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-            </div>
-            <div>
-              <input name="email" type="email" required className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <input name="password" type="password" required className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none rounded-b-md" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
+            <div><input name="username" type="text" required className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none rounded-t-md" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} /></div>
+            <div><input name="email" type="email" required className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <div><input name="password" type="password" required className="relative block w-full px-3 py-2 text-gray-900 placeholder-gray-500 border border-gray-300 rounded-none appearance-none rounded-b-md" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
           </div>
           {error && (<div className="p-3 text-sm text-red-700 bg-red-100 rounded-md">{error}</div>)}
-          <div>
-            <button type="submit" className="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md group hover:bg-indigo-700">Sign up</button>
-          </div>
+          <div><button type="submit" className="relative flex justify-center w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md group hover:bg-indigo-700">Sign up</button></div>
         </form>
         <div className="text-sm text-center">
           <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Already have an account? Sign in</Link>

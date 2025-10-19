@@ -6,7 +6,7 @@ import { PostProps } from '../types';
 import { updateFollowing } from '../store/authSlice';
 import CommentModal from './CommentModal';
 import { Link } from 'react-router-dom';
-import api from '../api/axios'; // Use the smart instance
+import api from '../api/axios';
 
 const PostCard: React.FC<{ post: PostProps }> = ({ post }) => {
   const { user } = useSelector((state: RootState) => state.auth);

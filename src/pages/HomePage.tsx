@@ -1,7 +1,5 @@
 // src/pages/HomePage.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import PostCard from '../components/PostCard';
 import CreatePostModal from '../components/CreatePostModal';
 import { PostProps } from '../types';

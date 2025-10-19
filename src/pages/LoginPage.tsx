@@ -1,4 +1,3 @@
-// src/pages/LoginPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -13,6 +12,8 @@ const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const googleLoginUrl = `${import.meta.env.VITE_API_BASE_URL}/auth/google`;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -44,7 +45,7 @@ const LoginPage = () => {
         </div>
         <div className="space-y-4">
           <div>
-            <a href="http://localhost:8000/api/v1/auth/google" className="relative flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm group hover:bg-gray-50">
+            <a href={googleLoginUrl} className="relative flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm group hover:bg-gray-50">
               <img className="w-5 h-5 mr-2" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" />
               Sign in with Google
             </a>

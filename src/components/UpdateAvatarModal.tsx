@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import { updateUser } from '../store/authSlice';
-import api from '../api/axios'; // Use the smart instance
+import api from '../api/axios';
 
 interface ModalProps {
   onClose: () => void;
@@ -33,7 +33,6 @@ const UpdateAvatarModal: React.FC<ModalProps> = ({ onClose }) => {
     formData.append('avatar', file);
 
     try {
-      // Use relative URL and multipart/form-data is handled automatically
       const response = await api.put('/users/me/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
