@@ -28,21 +28,32 @@ function App() {
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    if (isAuthenticated && token && !socketRef.current) {
-      // --- THIS IS THE FIX ---
-      // The VITE_API_BASE_URL is 'https://.../api/v1'. The socket connects to the base domain.
-      const socketUrl = import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '');
-      const socket: Socket = io(socketUrl, { auth: { token } });
-      // --- END OF FIX ---
-      
-      socketRef.current = socket;
-      socket.on('newNotification', (notification) => {
-        dispatch(addNotification(notification));
-      });
-    } else if (!isAuthenticated && socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
+    // Establish the global socket connection if the user is authenticated
+    if (isAuthenticated && token) {
+      if (!socketRef.current) {
+        // --- THIS IS THE FIX ---
+        // The VITE_API_BASE_URL is 'https://.../api/v1'. The socket connects to the base domain.
+        const socketUrl = (import.meta.env.VITE_API_BASE_URL || '').replace('/api/v1', '');
+        const socket: Socket = io(socketUrl, { auth: { token } });
+        // --- END OF FIX ---
+        
+        socketRef.current = socket;
+
+        socket.on('connect', () => console.log('Global socket connected:', socket.id));
+        
+        socket.on('newNotification', (notification) => {
+          dispatch(addNotification(notification));
+        });
+      }
+    } else {
+      // If the user logs out, disconnect the socket
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     }
+
+    // This cleanup runs when the App component unmounts (e.g., page closes)
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
