@@ -9,7 +9,15 @@ import { Link } from 'react-router-dom';
 import api from '../api/axios';
 
 const PostCard: React.FC<{ post: PostProps }> = ({ post }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  // --- THIS IS THE FIX ---
+  // If a post's author has been deleted, it becomes a "ghost post".
+  // We will safely skip rendering it to prevent the entire app from crashing.
+  if (!post.author) {
+    return null; // Render nothing for this post
+  }
+  // --- END OF FIX ---
+
+  const { user, token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   
   const currentUserId = user?._id;
