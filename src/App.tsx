@@ -40,6 +40,8 @@ function App() {
       
       setSocket(newSocket); // Save the socket to state, triggering a re-render
 
+      newSocket.on('connect', () => console.log('Global socket connected:', newSocket.id));
+
       newSocket.on('newNotification', (notification) => {
         dispatch(addNotification(notification));
       });
@@ -50,7 +52,9 @@ function App() {
 
     // Cleanup function
     return () => {
-      if (socket) {
+      // We only disconnect if the component unmounts
+      // The socket state change will re-run the effect
+      if (socket && !isAuthenticated) {
         socket.disconnect();
         setSocket(null);
       }
