@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { Socket } from 'socket.io-client'; // Import the Socket type
+import { Socket } from 'socket.io-client';
 import api from '../api/axios';
 
 // --- TYPE DEFINITIONS ---
@@ -19,10 +19,9 @@ interface ChatMessage {
   createdAt: string;
 }
 
-// --- THIS IS THE FIX ---
 // The component now accepts the global socket as a prop
 const ChatPage = ({ socket }: { socket: Socket | null }) => {
-  const { user: currentUser } = useSelector((state: RootState) => state.auth);
+  const { user: currentUser } = useSelector((state:RootState) => state.auth);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [conversations, setConversations] = useState<ConversationUser[]>([]);
@@ -31,7 +30,7 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
-  // Hook 1: Fetch the persistent conversation list (no changes needed)
+  // Hook 1: Fetch the persistent conversation list
   useEffect(() => {
     const fetchConversations = async () => {
       try {
@@ -46,7 +45,8 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
 
   // Hook 2: Listens for events on the INCOMING socket prop
   useEffect(() => {
-    if (!socket) return; // Don't do anything if the socket isn't ready
+    // We wait for the socket prop to be ready
+    if (!socket) return;
 
     // We no longer create a new connection here. We just listen.
     socket.on('online_users', (users: { userId: string }[]) => {
@@ -63,24 +63,23 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
       });
     });
     const handleReceiveMessage = (message: ChatMessage) => {
-        // Use a functional update to get the latest selectedUser state
-        setSelectedUser(currentSelectedUser => {
-            if (message.sender._id === currentSelectedUser?._id) {
-                setMessages((prev) => [...prev, message]);
-            }
-            return currentSelectedUser;
-        });
+      setSelectedUser(currentSelectedUser => {
+        if (message.sender._id === currentSelectedUser?._id) {
+          setMessages((prev) => [...prev, message]);
+        }
+        return currentSelectedUser;
+      });
     };
     socket.on('receiveMessage', handleReceiveMessage);
 
-    // Clean up listeners when the component unmounts or socket changes
+    // Clean up listeners
     return () => {
       socket.off('online_users');
       socket.off('user_online');
       socket.off('user_offline');
       socket.off('receiveMessage', handleReceiveMessage);
     };
-  }, [socket]); // This hook now depends on the socket prop
+  }, [socket]); // This hook now correctly depends on the socket prop
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -99,9 +98,13 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
   
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
+    // --- THIS IS THE FIX ---
+    // We now use the 'socket' prop, not 'socketRef.current'
     if (!newMessage.trim() || !selectedUser || !socket) return;
     const messageData = { receiverId: selectedUser._id, content: newMessage };
     socket.emit('sendMessage', messageData);
+    // --- END OF FIX ---
+
     const ownMessage: any = {
       _id: Date.now().toString(),
       sender: { _id: (currentUser as any)._id, username: (currentUser as any).username },
@@ -114,7 +117,7 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
-      <div className="w-1/3 border-r border-gray-200 bg-white flex flex-col">
+      <div className="w-1-3 border-r border-gray-200 bg-white flex flex-col">
         <div className="p-4 border-b border-gray-200"><h2 className="text-xl font-bold">Chats</h2></div>
         <div className="overflow-y-auto flex-1">
           {conversations.map((user) => (
