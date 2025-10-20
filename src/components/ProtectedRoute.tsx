@@ -1,28 +1,29 @@
-// src/components/ProtectedRoute.tsx
 import { useSelector } from 'react-redux';
 import { Navigate, useLocation } from 'react-router-dom';
 import type { RootState } from '../store';
-import React from 'react'; // Import React
 
-// --- THIS IS THE FIX ---
-// We will use React.ReactNode, which is a more flexible and standard type for the 'children' prop.
-// This avoids the specific 'JSX' namespace issue.
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// We use JSX.Element because the <Route> component expects a valid React element.
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  // Get the full authentication state from Redux
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
 
-  // 1. If not logged in, redirect to login page
+  // 1. Check if the user is logged in at all.
+  // If not, they are immediately sent to the login page.
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 2. If logged in but NOT verified, redirect to the verify page
-  if (!user?.isEmailVerified && location.pathname !== '/verify-phone') {
+  // 2. Check if the user is logged in BUT their email is NOT verified.
+  // If so, they are sent to the "please-verify" page.
+  // We make an exception for the page that lets them verify their phone.
+  if (user && !user.isEmailVerified && location.pathname !== '/verify-phone') {
     return <Navigate to="/please-verify" replace />;
   }
   
-  // 3. If logged in AND verified, allow access
-  return <>{children}</>; // Wrap children in a fragment
+  // 3. If all checks pass (user is logged in AND verified),
+  // then we return the 'children', which is the page they were trying to access (e.g., <HomePage />).
+  return children;
 };
 
 export default ProtectedRoute;
