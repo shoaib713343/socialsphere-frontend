@@ -1,6 +1,6 @@
 // src/App.tsx
 import { Routes, Route } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react'; // Import useState, remove useRef
 import { useSelector, useDispatch } from 'react-redux';
 import type{ RootState, AppDispatch } from './store';
 import { io, Socket } from 'socket.io-client';
@@ -25,42 +25,37 @@ import PleaseVerifyPage from './pages/PleaseVerifyPage';
 function App() {
   const { isAuthenticated, token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
-  const socketRef = useRef<Socket | null>(null);
+  
+  // --- THIS IS THE FIX ---
+  // We use useState instead of useRef.
+  // This ensures that when the socket is created, the component re-renders
+  // and passes the new socket prop to ChatPage.
+  const [socket, setSocket] = useState<Socket | null>(null);
+  // --- END OF FIX ---
 
   useEffect(() => {
-    // Establish the global socket connection if the user is authenticated
-    if (isAuthenticated && token) {
-      if (!socketRef.current) {
-        // --- THIS IS THE FIX ---
-        // The VITE_API_BASE_URL is 'https://.../api/v1'. The socket connects to the base domain.
-        const socketUrl = (import.meta.env.VITE_API_BASE_URL || '').replace('/api/v1', '');
-        const socket: Socket = io(socketUrl, { auth: { token } });
-        // --- END OF FIX ---
-        
-        socketRef.current = socket;
+    if (isAuthenticated && token && !socket) {
+      const socketUrl = (import.meta.env.VITE_API_BASE_URL || '').replace('/api/v1', '');
+      const newSocket: Socket = io(socketUrl, { auth: { token } });
+      
+      setSocket(newSocket); // Save the socket to state, triggering a re-render
 
-        socket.on('connect', () => console.log('Global socket connected:', socket.id));
-        
-        socket.on('newNotification', (notification) => {
-          dispatch(addNotification(notification));
-        });
-      }
-    } else {
-      // If the user logs out, disconnect the socket
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
+      newSocket.on('newNotification', (notification) => {
+        dispatch(addNotification(notification));
+      });
+    } else if (!isAuthenticated && socket) {
+      socket.disconnect();
+      setSocket(null);
     }
 
-    // This cleanup runs when the App component unmounts (e.g., page closes)
+    // Cleanup function
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
       }
     };
-  }, [isAuthenticated, token, dispatch]);
+  }, [isAuthenticated, token, dispatch, socket]); // Add 'socket' to dependency array
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,7 +64,7 @@ function App() {
         <Routes>
           {/* Protected Routes */}
           <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-          <Route path="/chat" element={<ProtectedRoute><ChatPage socket={socketRef.current} /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><ChatPage socket={socket} /></ProtectedRoute>} />
           <Route path="/verify-phone" element={<ProtectedRoute><PhoneVerificationPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
           <Route path="/profile/:username?" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
