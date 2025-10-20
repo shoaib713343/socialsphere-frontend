@@ -17,7 +17,7 @@ import EmailVerificationPage from './pages/EmailVerificationPage';
 import PhoneVerificationPage from './pages/PhoneVerificationPage';
 import ChatPage from './pages/ChatPage';
 import UsersPage from './pages/UsersPage';
-import ProfilePage from './pages/ProfilePage'; // 1. Import the new page
+import ProfilePage from './pages/ProfilePage';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import PleaseVerifyPage from './pages/PleaseVerifyPage';
@@ -29,7 +29,12 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated && token && !socketRef.current) {
-      const socket: Socket = io('http://localhost:8000', { auth: { token } });
+      // --- THIS IS THE FIX ---
+      // The VITE_API_BASE_URL is 'https://.../api/v1'. The socket connects to the base domain.
+      const socketUrl = import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '');
+      const socket: Socket = io(socketUrl, { auth: { token } });
+      // --- END OF FIX ---
+      
       socketRef.current = socket;
       socket.on('newNotification', (notification) => {
         dispatch(addNotification(notification));
@@ -56,9 +61,8 @@ function App() {
           <Route path="/chat" element={<ProtectedRoute><ChatPage socket={socketRef.current} /></ProtectedRoute>} />
           <Route path="/verify-phone" element={<ProtectedRoute><PhoneVerificationPage /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
-          {/* 2. Add the dynamic route for profiles */}
-          <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/please-verify" element={<PleaseVerifyPage />} />
+          <Route path="/profile/:username?" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/please-verify" element={<ProtectedRoute><PleaseVerifyPage /></ProtectedRoute>} />
 
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />

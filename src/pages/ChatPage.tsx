@@ -2,9 +2,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { io, Socket } from 'socket.io-client';
+import { Socket } from 'socket.io-client'; // Import the Socket type
 import api from '../api/axios';
 
+// --- TYPE DEFINITIONS ---
 interface ConversationUser {
   _id: string;
   username: string;
@@ -18,16 +19,19 @@ interface ChatMessage {
   createdAt: string;
 }
 
+// --- THIS IS THE FIX ---
+// The component now accepts the global socket as a prop
 const ChatPage = ({ socket }: { socket: Socket | null }) => {
-  const { token, user: currentUser } = useSelector((state: RootState) => state.auth);
-  const socketRef = useRef<Socket | null>(null);
+  const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const [conversations, setConversations] = useState<ConversationUser[]>([]);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [selectedUser, setSelectedUser] = useState<ConversationUser | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
 
+  // Hook 1: Fetch the persistent conversation list (no changes needed)
   useEffect(() => {
     const fetchConversations = async () => {
       try {
@@ -37,48 +41,46 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
         console.error('Failed to fetch conversations', error);
       }
     };
-    if (token) {
-      fetchConversations();
-    }
-  }, [token]);
+    fetchConversations();
+  }, []);
 
+  // Hook 2: Listens for events on the INCOMING socket prop
   useEffect(() => {
-    if (token) {
-      const socket: Socket = io('http://localhost:8000', { auth: { token } });
-      socketRef.current = socket;
-      socket.on('online_users', (users: { userId: string }[]) => {
-        setOnlineUserIds(new Set(users.map(u => u.userId)));
+    if (!socket) return; // Don't do anything if the socket isn't ready
+
+    // We no longer create a new connection here. We just listen.
+    socket.on('online_users', (users: { userId: string }[]) => {
+      setOnlineUserIds(new Set(users.map(u => u.userId)));
+    });
+    socket.on('user_online', (newUser: { userId: string }) => {
+      setOnlineUserIds((prev) => new Set(prev).add(newUser.userId));
+    });
+    socket.on('user_offline', (offlineUser: { userId: string }) => {
+      setOnlineUserIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(offlineUser.userId);
+        return newSet;
       });
-      socket.on('user_online', (newUser: { userId: string }) => {
-        setOnlineUserIds((prev) => new Set(prev).add(newUser.userId));
-      });
-      socket.on('user_offline', (offlineUser: { userId: string }) => {
-        setOnlineUserIds((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(offlineUser.userId);
-          return newSet;
-        });
-      });
-      return () => {
-        socket.disconnect();
-        socketRef.current = null;
-      };
-    }
-  }, [token]);
-  
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket) return;
+    });
     const handleReceiveMessage = (message: ChatMessage) => {
-      if (message.sender._id === selectedUser?._id) {
-        setMessages((prev) => [...prev, message]);
-      }
+        // Use a functional update to get the latest selectedUser state
+        setSelectedUser(currentSelectedUser => {
+            if (message.sender._id === currentSelectedUser?._id) {
+                setMessages((prev) => [...prev, message]);
+            }
+            return currentSelectedUser;
+        });
     };
     socket.on('receiveMessage', handleReceiveMessage);
+
+    // Clean up listeners when the component unmounts or socket changes
     return () => {
+      socket.off('online_users');
+      socket.off('user_online');
+      socket.off('user_offline');
       socket.off('receiveMessage', handleReceiveMessage);
     };
-  }, [selectedUser]);
+  }, [socket]); // This hook now depends on the socket prop
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -97,9 +99,9 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
   
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedUser || !socketRef.current) return;
+    if (!newMessage.trim() || !selectedUser || !socket) return;
     const messageData = { receiverId: selectedUser._id, content: newMessage };
-    socketRef.current.emit('sendMessage', messageData);
+    socket.emit('sendMessage', messageData);
     const ownMessage: any = {
       _id: Date.now().toString(),
       sender: { _id: (currentUser as any)._id, username: (currentUser as any).username },
@@ -116,16 +118,10 @@ const ChatPage = ({ socket }: { socket: Socket | null }) => {
         <div className="p-4 border-b border-gray-200"><h2 className="text-xl font-bold">Chats</h2></div>
         <div className="overflow-y-auto flex-1">
           {conversations.map((user) => (
-            <div
-              key={user._id}
-              onClick={() => handleUserSelect(user)}
-              className={`flex items-center p-3 cursor-pointer border-b ${selectedUser?._id === user._id ? 'bg-indigo-100' : 'hover:bg-gray-100'}`}
-            >
+            <div key={user._id} onClick={() => handleUserSelect(user)} className={`flex items-center p-3 cursor-pointer border-b ${selectedUser?._id === user._id ? 'bg-indigo-100' : 'hover:bg-gray-100'}`}>
               <div className="relative">
                 <img className="w-12 h-12 rounded-full object-cover" src={user.profilePicture || `https://i.pravatar.cc/150?u=${user._id}`} alt={user.username} />
-                {onlineUserIds.has(user._id) && (
-                  <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>
-                )}
+                {onlineUserIds.has(user._id) && (<span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 border-2 border-white"></span>)}
               </div>
               <p className="ml-4 font-semibold text-gray-700">{user.username}</p>
             </div>
