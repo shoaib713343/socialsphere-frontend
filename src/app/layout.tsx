@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "./StoreProvider";
+import { SocketProvider } from "@/context/SocketContext"; // <--- Import
+import Navbar from "@/components/Navbar";
+import AuthProvider from "@/components/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +22,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <StoreProvider>
-          {children}
+          <AuthProvider>
+          {/* SocketProvider must be INSIDE StoreProvider because it uses useSelector */}
+          <SocketProvider>
+            <Navbar />
+            {children}
+          </SocketProvider>
+          </AuthProvider>
         </StoreProvider>
       </body>
     </html>
